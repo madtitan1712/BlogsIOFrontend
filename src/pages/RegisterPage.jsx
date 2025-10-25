@@ -32,12 +32,8 @@ const RegisterPage = () => {
     );
   }
 
-  // Debug: Log auth state (remove in production)
-  console.log('RegisterPage - isAuthenticated:', isAuthenticated(), 'loading:', loading);
-
   // If user is already authenticated, redirect to the home page
   if (isAuthenticated()) {
-    console.log('User is authenticated, redirecting to home');
     return <Navigate to="/" replace />;
   }
 

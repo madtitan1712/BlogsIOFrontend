@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }) => {
         if (typeof role === 'string' && role.includes(',')) {
             // Split by comma and get the first role
             const roleArray = role.split(',');
-            console.log('Parsed comma-separated roles:', roleArray);
             // Use the highest privilege role (ADMIN > AUTHOR > READER)
             if (roleArray.includes('ROLE_ADMIN')) {
                 roleValue = 'ADMIN';
@@ -70,7 +69,6 @@ export const AuthProvider = ({ children }) => {
         roleValue = typeof roleValue === 'string' ? roleValue.toUpperCase() : 'READER';
         
         // Using role directly from JWT without any overrides
-        console.log('Using role directly from JWT token:', roleValue);
         
         // Extract and normalize user ID (always convert to string for consistent comparison)
         const userId = decoded.id || decoded.sub; // 'sub' is standard for subject (user id)
@@ -127,13 +125,11 @@ export const AuthProvider = ({ children }) => {
             emailId: userEmail || (userId && typeof userId === 'string' && userId.includes('@') ? userId : null)
           };
           
-          console.log('Created user data from JWT (no profile):', userData);
           
           // If we have a numeric ID from JWT, store it in localStorage
           if (numericId) {
             const numericUserId = Number(numericId);
             localStorage.setItem('userId', String(numericUserId));
-            console.log('Stored numeric userId from JWT in localStorage:', numericUserId);
           }
         }
         
@@ -159,7 +155,6 @@ export const AuthProvider = ({ children }) => {
       if (response && response.jwt) {
         // Decode the token to get user info
         const decoded = jwtDecode(response.jwt);
-        console.log('Decoded JWT token after login:', decoded);
         
         // Extract user role - handle different JWT structures including the new comma-separated format
         let role = decoded.role || decoded.roles || decoded.authorities || 'READER';
@@ -169,7 +164,6 @@ export const AuthProvider = ({ children }) => {
         if (typeof role === 'string' && role.includes(',')) {
             // Split by comma and get the first role
             const roleArray = role.split(',');
-            console.log('Parsed comma-separated roles:', roleArray);
             // Use the highest privilege role (ADMIN > AUTHOR > READER)
             if (roleArray.includes('ROLE_ADMIN')) {
                 roleValue = 'ADMIN';
@@ -192,7 +186,6 @@ export const AuthProvider = ({ children }) => {
         roleValue = typeof roleValue === 'string' ? roleValue.toUpperCase() : 'READER';
         
         // Using role directly from JWT without any overrides
-        console.log('Using role directly from JWT token:', roleValue);
         
         // Extract and normalize user ID (always convert to string for consistent comparison)
         const userId = decoded.id || decoded.sub; // 'sub' is standard for subject (user id)
@@ -212,7 +205,6 @@ export const AuthProvider = ({ children }) => {
         
         // Log the user info for debugging in development
         if (import.meta.env.DEV) {
-          console.log('User info from login JWT:', {
             decoded,
             userId,
             numericId,
@@ -238,12 +230,10 @@ export const AuthProvider = ({ children }) => {
             emailId: response.profile.email || userEmail || (userId && typeof userId === 'string' && userId.includes('@') ? userId : null)
           };
           
-          console.log('Created user data from login profile:', userData);
           
           // Store numeric user ID in localStorage - ENSURE it's a number
           const numericUserId = Number(response.profile.id);
           localStorage.setItem('userId', String(numericUserId));
-          console.log('Stored numeric userId in localStorage from login:', numericUserId);
         } else {
           // Fallback to JWT data if profile is not available in login response
           userData = {
@@ -257,16 +247,13 @@ export const AuthProvider = ({ children }) => {
             emailId: userEmail || (userId && typeof userId === 'string' && userId.includes('@') ? userId : null)
           };
           
-          console.log('Created user data from login JWT (no profile):', userData);
           
           // If we have a numeric ID from JWT, store it
           if (numericId) {
             const numericUserId = Number(numericId);
             localStorage.setItem('userId', String(numericUserId));
-            console.log('Stored numeric userId from JWT in localStorage:', numericUserId);
           } else {
             // If no numeric ID found, try to fetch profile separately
-            console.log('No numeric ID in JWT, attempting to fetch profile separately...');
             try {
               const profileData = await AuthService.getUserProfile();
               if (profileData && profileData.id) {
@@ -282,7 +269,6 @@ export const AuthProvider = ({ children }) => {
                   email: profileData.email || userData.email,
                 };
                 
-                console.log('Updated user data from separate profile fetch:', userData);
               }
             } catch (profileErr) {
               console.error('Failed to fetch profile after login:', profileErr);
