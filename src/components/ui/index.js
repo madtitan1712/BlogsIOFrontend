@@ -7,3 +7,4 @@ export { default as SearchBar } from './SearchBar';
 export { default as Pagination } from './Pagination';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as RoleBadge } from './RoleBadge';
+export { default as PasswordInput } from './PasswordInput';

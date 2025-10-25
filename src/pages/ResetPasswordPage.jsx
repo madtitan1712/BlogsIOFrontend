@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
+import PasswordInput from '../components/ui/PasswordInput';
 import ErrorAlert from '../components/ui/ErrorAlert';
 import AuthService from '../services/AuthService';
+import { STRENGTH_LEVELS } from '../utils/PasswordValidator';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -15,6 +16,7 @@ const ResetPasswordPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
   const [tokenError, setTokenError] = useState('');
+  const [passwordValidation, setPasswordValidation] = useState(null);
 
   useEffect(() => {
     const tokenFromUrl = searchParams.get('token');
@@ -25,21 +27,30 @@ const ResetPasswordPage = () => {
     }
   }, [searchParams]);
 
-  const validatePassword = (password) => {
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-    return '';
+  const handlePasswordValidation = (validation) => {
+    setPasswordValidation(validation);
+  };
+
+  const handlePasswordChange = (e) => {
+    setNewPassword(e.target.value);
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    setConfirmPassword(e.target.value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validate passwords
-    const passwordError = validatePassword(newPassword);
-    if (passwordError) {
-      setError(passwordError);
+    // Validate passwords using the new validation system
+    if (!newPassword) {
+      setError('Password is required');
+      return;
+    }
+
+    if (passwordValidation && !passwordValidation.isValid) {
+      setError('Password does not meet security requirements');
       return;
     }
 
@@ -154,36 +165,35 @@ const ResetPasswordPage = () => {
             <label htmlFor="newPassword" className="block text-sm font-medium text-text-primary mb-2">
               New Password
             </label>
-            <Input
+            <PasswordInput
               id="newPassword"
               name="newPassword"
-              type="password"
-              autoComplete="new-password"
-              required
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter your new password"
+              onChange={handlePasswordChange}
+              onValidation={handlePasswordValidation}
+              placeholder="Enter your new secure password"
               disabled={isLoading}
+              showStrengthMeter={true}
+              showCriteria={true}
+              minStrengthLevel={STRENGTH_LEVELS.FAIR}
+              autoComplete="new-password"
             />
-            <p className="mt-1 font-light text-xs text-text-secondary">
-              Password must be at least 6 characters long
-            </p>
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-primary mb-2">
               Confirm New Password
             </label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={handleConfirmPasswordChange}
               placeholder="Confirm your new password"
               disabled={isLoading}
+              showStrengthMeter={false}
+              showCriteria={false}
+              autoComplete="new-password"
             />
           </div>
 
