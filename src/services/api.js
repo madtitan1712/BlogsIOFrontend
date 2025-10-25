@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-// Create axios instance with base URL
-// We're assuming the API is running at http://localhost:8080/api based on requirements
-// If the actual API URL is different, update this value
+// Create axios instance with base URL from environment variables
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
   // Adding longer timeout for debugging
   timeout: 10000,
   headers: {

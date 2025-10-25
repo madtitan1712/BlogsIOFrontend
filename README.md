@@ -59,16 +59,27 @@ cd BlogsIOFrontend
 npm install
 ```
 
-3. Start the development server
+3. Configure environment variables
+```bash
+cp .env.example .env
+```
+Edit the `.env` file and update the API base URL to match your backend server:
+```
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+4. Start the development server
 ```bash
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+5. Open your browser and navigate to `http://localhost:5173`
 
-### Environment Setup
+### Environment Configuration
 
-The application is configured to work with a backend API. Update the API base URL in `src/services/api.js` to match your backend server.
+The application uses environment variables for configuration. Copy `.env.example` to `.env` and update the values:
+
+- `VITE_API_BASE_URL`: The base URL for your backend API server
 
 ## Project Structure
 
