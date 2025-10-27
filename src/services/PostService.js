@@ -5,10 +5,15 @@ const PostService = {
   // Get all posts (paginated)
   getAllPosts: async (page = 0, size = 10, sort = 'createdAt,desc', search = '') => {
     const params = { page, size, sort };
-    if (search) params.search = search;
+    let endpoint = '/posts/getAll';
+    if (search) {
+      endpoint = '/posts/search';
+      params.keyword = search; // Use 'keyword' parameter for search endpoint
+      delete params.search; // Remove the old 'search' parameter if it exists
+    }
     
     try {
-      const response = await api.get('/posts/getAll', { params });
+      const response = await api.get(endpoint, { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching posts:', error);

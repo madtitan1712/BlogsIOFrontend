@@ -49,7 +49,6 @@ const AdminPage = () => {
     isLoading: false
   });
 
-  // Load data on initial render
   useEffect(() => {
     loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
