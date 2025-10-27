@@ -12,6 +12,8 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentSort, setCurrentSort] = useState('createdAt,desc');
+  const [activeTag, setActiveTag] = useState(null);
   const [pagination, setPagination] = useState({
     currentPage: 0,
     totalPages: 1,
@@ -19,24 +21,26 @@ const HomePage = () => {
   });
 
   // Fetch posts from real API with fallback to mock data
-  const fetchPosts = async (page = 0, search = '') => {
+  const fetchPosts = async (page = 0, sort = currentSort, tag = activeTag, search = searchTerm) => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching posts with params:', { page, size: 10, sort: 'createdAt,desc', search });
+      let response;
       
       try {
-        // Try to call the real API first
-        const response = await PostService.getAllPosts(
-          page,
-          10, // posts per page
-          'createdAt,desc', // sort by creation date, descending
-          search // search term if any
-        );
+        // Determine which API call to make based on parameters
+        if (tag) {
+          // If tag is present, call getPostsByTag
+          response = await PostService.getPostsByTag(tag, page, 10, sort);
+        } else if (search) {
+          // If search but no tag, call getAllPosts with search
+          response = await PostService.getAllPosts(page, 10, sort, search);
+        } else {
+          // Default: get all posts normally
+          response = await PostService.getAllPosts(page, 10, sort);
+        }
         
-        console.log('API response:', response);
-
         // Set posts and pagination data from the response
         if (response && response.content) {
           setPosts(response.content);
@@ -45,14 +49,13 @@ const HomePage = () => {
             totalPages: response.totalPages || 1,
             totalElements: response.totalElements || 0,
           });
-          console.log('Posts loaded from API:', response.content.length);
         } else {
           console.warn('API response is missing content array, falling back to mock data');
-          loadMockData(search);
+          loadMockData(search, tag);
         }
       } catch (apiError) {
         console.error('Error fetching from API, falling back to mock data:', apiError);
-        loadMockData(search);
+        loadMockData(search, tag);
       }
     } catch (err) {
       console.error('Error in fetchPosts:', err);
@@ -64,20 +67,29 @@ const HomePage = () => {
   };
   
   // Helper function to load mock data
-  const loadMockData = (search = '') => {
-    console.log('Using mock data as fallback');
-    
+  const loadMockData = (search = '', tag = null) => {
     // Set a warning that we're using mock data
     setError('⚠️ Unable to connect to the backend API. Using mock data for demonstration purposes.');
     
-    // Filter mock posts if search term is provided
+    // Filter mock posts based on search and tag
     let filteredPosts = mockPosts.content;
+    
+    // Filter by tag first if specified
+    if (tag) {
+      filteredPosts = filteredPosts.filter(post => 
+        post.tags && post.tags.some(postTag => 
+          postTag.toLowerCase() === tag.toLowerCase()
+        )
+      );
+    }
+    
+    // Then filter by search term if provided
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredPosts = mockPosts.content.filter(post => 
+      filteredPosts = filteredPosts.filter(post => 
         post.title.toLowerCase().includes(searchLower) || 
         post.content.toLowerCase().includes(searchLower) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        post.tags.some(postTag => postTag.toLowerCase().includes(searchLower))
       );
     }
     
@@ -85,34 +97,46 @@ const HomePage = () => {
     setPagination({
       currentPage: mockPosts.number || 0,
       totalPages: mockPosts.totalPages || 1,
-      totalElements: mockPosts.totalElements || 0,
+      totalElements: filteredPosts.length,
     });
-    
-    console.log('Mock posts loaded:', filteredPosts.length);
   };
 
-  // Initialize by fetching posts
+  // Initialize by fetching posts and re-fetch when sort, tag, or search changes
   useEffect(() => {
-    // Create a memoized version of fetchPosts that doesn't change
-    const initialFetch = () => {
-      fetchPosts(0, '');
-    };
-    
-    initialFetch();
-    // We intentionally leave the dependency array empty to only run on mount
+    fetchPosts(0, currentSort, activeTag, searchTerm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentSort, activeTag, searchTerm]);
 
   // Handle search
   const handleSearch = (term) => {
     setSearchTerm(term);
-    fetchPosts(0, term); // Reset to first page when searching
+    setActiveTag(null); // Clear tag filter when searching
+    fetchPosts(0, currentSort, null, term); // Reset to first page when searching
   };
 
   // Handle page change
   const handlePageChange = (page) => {
     // API pagination is 0-based, but our UI is 1-based
-    fetchPosts(page - 1, searchTerm);
+    fetchPosts(page - 1, currentSort, activeTag, searchTerm);
+  };
+
+  // Handle tag click
+  const handleTagClick = (tag) => {
+    setActiveTag(tag);
+    setSearchTerm(''); // Clear search when filtering by tag
+    fetchPosts(0, currentSort, tag, ''); // Reset to first page when filtering by tag
+  };
+
+  // Clear tag filter
+  const clearTagFilter = () => {
+    setActiveTag(null);
+    fetchPosts(0, currentSort, null, searchTerm);
+  };
+
+  // Handle sort change
+  const handleSortChange = (newSort) => {
+    setCurrentSort(newSort);
+    fetchPosts(0, newSort, activeTag, searchTerm); // Reset to first page when changing sort
   };
 
   return (
@@ -132,6 +156,63 @@ const HomePage = () => {
           placeholder="Search posts..."
           className="shadow-medium"
         />
+      </div>
+
+      {/* Active Tag Display */}
+      {activeTag && (
+        <div className="mb-8 text-center fade-in">
+          <div className="inline-flex items-center bg-accent-light dark:bg-accent-dark text-accent-dark dark:text-accent-light px-5 py-3 rounded-xl shadow-sm border border-accent/20 backdrop-blur-sm">
+            <svg className="w-4 h-4 mr-2 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span className="font-sans text-sm font-medium mr-2">Filtering by tag:</span>
+            <span className="font-serif font-semibold text-accent">#{activeTag}</span>
+            <button
+              onClick={clearTagFilter}
+              className="ml-3 flex items-center justify-center w-6 h-6 rounded-full bg-accent/20 hover:bg-accent/30 text-accent hover:text-accent-dark transition-all duration-200 text-sm font-bold"
+              title="Clear tag filter"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sorting Controls */}
+      <div className="mb-8 text-center fade-in">
+        <div className="inline-flex bg-background border border-border-color rounded-xl shadow-sm overflow-hidden backdrop-blur-sm">
+          <button
+            onClick={() => handleSortChange('createdAt,desc')}
+            className={`px-6 py-3 font-medium font-sans text-sm transition-all duration-200 ${
+              currentSort === 'createdAt,desc'
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-text-primary hover:bg-accent/10 hover:text-accent'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Newest First
+            </span>
+          </button>
+          <div className="w-px bg-border-color"></div>
+          <button
+            onClick={() => handleSortChange('title,asc')}
+            className={`px-6 py-3 font-medium font-sans text-sm transition-all duration-200 ${
+              currentSort === 'title,asc'
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-text-primary hover:bg-accent/10 hover:text-accent'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+              </svg>
+              Title (A-Z)
+            </span>
+          </button>
+        </div>
       </div>
       
       {loading ? (
@@ -153,7 +234,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 stagger-fade-in">
             {posts.map((post, index) => (
               <div key={post.id} className={`modern-card shadow-medium fade-in`} style={{animationDelay: `${index * 0.1}s`}}>
-                <PostCard post={post} />
+                <PostCard post={post} onTagClick={handleTagClick} />
               </div>
             ))}
           </div>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 const PostCard = ({
   post,
   className = '',
+  onTagClick,
 }) => {
   // Format date to be more readable
   const formatDate = (dateString) => {
@@ -41,14 +42,30 @@ const PostCard = ({
         </div>
 
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-2 mb-4">
             {post.tags.map(tag => (
-              <span 
-                key={tag} 
-                className="bg-accent-light text-accent-dark dark:bg-accent-dark dark:text-accent-light text-xs px-2 py-1 rounded-full font-sans"
-              >
-                {tag}
-              </span>
+              onTagClick ? (
+                <button
+                  key={tag}
+                  onClick={() => onTagClick(tag)}
+                  className="group inline-flex items-center bg-accent-light dark:bg-accent-dark text-accent-dark dark:text-accent-light text-xs px-3 py-1.5 rounded-lg font-sans font-medium border border-accent/20 hover:bg-accent hover:text-white hover:border-accent transition-all duration-200 hover:shadow-sm hover:scale-105 cursor-pointer"
+                >
+                  <svg className="w-3 h-3 mr-1 opacity-75 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  {tag}
+                </button>
+              ) : (
+                <span 
+                  key={tag} 
+                  className="inline-flex items-center bg-accent-light dark:bg-accent-dark text-accent-dark dark:text-accent-light text-xs px-3 py-1.5 rounded-lg font-sans font-medium border border-accent/20"
+                >
+                  <svg className="w-3 h-3 mr-1 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  {tag}
+                </span>
+              )
             ))}
           </div>
         )}
@@ -103,6 +120,7 @@ PostCard.propTypes = {
     tags: PropTypes.arrayOf(PropTypes.string)
   }).isRequired,
   className: PropTypes.string,
+  onTagClick: PropTypes.func
 };
 
 export default PostCard;

@@ -57,6 +57,19 @@ const PostService = {
     }
   },
 
+  // Get posts by tag (paginated)
+  getPostsByTag: async (tagName, page = 0, size = 10, sort = 'createdAt,desc') => {
+    try {
+      const response = await api.get(`/posts/tag/${encodeURIComponent(tagName)}`, {
+        params: { page, size, sort }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching posts by tag ${tagName}:`, error);
+      throw error;
+    }
+  },
+
   // Get current user's posts (my-posts)
   getMyPosts: async (page = 0, size = 10, sort = 'createdAt,desc') => {
     try {
